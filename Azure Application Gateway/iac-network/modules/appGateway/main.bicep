@@ -44,6 +44,31 @@ var httpsListeners = [for hostname in allowedHostnames: {
   hostname: hostname
 }]
 
+// Fix BCP138 : for-expressions déplacées dans des variables
+var httpsListenerProps = [for listener in httpsListeners: {
+  name: listener.name
+  properties: {
+    frontendIPConfiguration: { id: resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', agwName, frontendIpConfigName) }
+    frontendPort: { id: resourceId('Microsoft.Network/applicationGateways/frontendPorts', agwName, frontendPort443Name) }
+    protocol: 'Https'
+    hostName: listener.hostname
+    requireServerNameIndication: true
+    sslCertificate: { id: resourceId('Microsoft.Network/applicationGateways/sslCertificates', agwName, sslCertName) }
+  }
+}]
+
+var httpsRoutingRules = [for (listener, idx) in httpsListeners: {
+  name: 'rule-${listener.name}'
+  properties: {
+    ruleType: 'Basic'
+    priority: 100 + idx
+    httpListener: { id: resourceId('Microsoft.Network/applicationGateways/httpListeners', agwName, listener.name) }
+    backendAddressPool: { id: resourceId('Microsoft.Network/applicationGateways/backendAddressPools', agwName, backendPoolWebName) }
+    backendHttpSettings: { id: resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', agwName, backendSettingsWebName) }
+    rewriteRuleSet: { id: resourceId('Microsoft.Network/applicationGateways/rewriteRuleSets', agwName, rewriteSetName) }
+  }
+}]
+
 resource agw 'Microsoft.Network/applicationGateways@2023-09-01' = {
   name: agwName
   location: location
@@ -75,17 +100,7 @@ resource agw 'Microsoft.Network/applicationGateways@2023-09-01' = {
           protocol: 'Http'
         }
       }],
-      [for listener in httpsListeners: {
-        name: listener.name
-        properties: {
-          frontendIPConfiguration: { id: resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', agwName, frontendIpConfigName) }
-          frontendPort: { id: resourceId('Microsoft.Network/applicationGateways/frontendPorts', agwName, frontendPort443Name) }
-          protocol: 'Https'
-          hostName: listener.hostname
-          requireServerNameIndication: true
-          sslCertificate: { id: resourceId('Microsoft.Network/applicationGateways/sslCertificates', agwName, sslCertName) }
-        }
-      }]
+      httpsListenerProps
     )
     backendAddressPools: [
       { name: backendPoolWebName, properties: { backendAddresses: [{ fqdn: 'app-${namingPrefix}-web-${environment}.azurewebsites.net' }] } }
@@ -161,17 +176,7 @@ resource agw 'Microsoft.Network/applicationGateways@2023-09-01' = {
           redirectConfiguration: { id: resourceId('Microsoft.Network/applicationGateways/redirectConfigurations', agwName, redirectConfigName) }
         }
       }],
-      [for (listener, idx) in httpsListeners: {
-        name: 'rule-${listener.name}'
-        properties: {
-          ruleType: 'Basic'
-          priority: 100 + idx
-          httpListener: { id: resourceId('Microsoft.Network/applicationGateways/httpListeners', agwName, listener.name) }
-          backendAddressPool: { id: resourceId('Microsoft.Network/applicationGateways/backendAddressPools', agwName, backendPoolWebName) }
-          backendHttpSettings: { id: resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', agwName, backendSettingsWebName) }
-          rewriteRuleSet: { id: resourceId('Microsoft.Network/applicationGateways/rewriteRuleSets', agwName, rewriteSetName) }
-        }
-      }]
+      httpsRoutingRules
     )
   }
 }
