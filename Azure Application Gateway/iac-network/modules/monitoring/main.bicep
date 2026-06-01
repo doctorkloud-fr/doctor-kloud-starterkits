@@ -171,7 +171,8 @@ resource alertFailedRequests 'Microsoft.Insights/metricAlerts@2018-03-01' = {
   location: 'global'
   tags: tags
   properties: {
-    description: 'P1 — Taux d\'echec applicatif anormal'    severity: 1
+    description: 'P1 — Taux d\'echec applicatif anormal'
+    severity: 1
     enabled: true
     scopes: [
       agwResourceId
