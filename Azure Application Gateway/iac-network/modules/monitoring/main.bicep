@@ -20,7 +20,7 @@ param location string
 @description('Resource ID de l\'AGW à monitorer')
 param agwResourceId string
 
-@description('Nom de l\'AGW (pour les noms d'alertes)')
+@description('Nom de l\'AGW (pour les noms d\'alertes)')
 param agwName string
 
 @description('Resource ID du workspace Log Analytics')
@@ -171,8 +171,7 @@ resource alertFailedRequests 'Microsoft.Insights/metricAlerts@2018-03-01' = {
   location: 'global'
   tags: tags
   properties: {
-    description: 'P1 — Taux d'échec applicatif anormal'
-    severity: 1
+    description: 'P1 — Taux d\'echec applicatif anormal'    severity: 1
     enabled: true
     scopes: [
       agwResourceId
